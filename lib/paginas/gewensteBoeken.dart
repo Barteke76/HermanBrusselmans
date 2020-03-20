@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:herman_brusselmans/paginas/boekinfo.dart';
 import 'package:herman_brusselmans/paginas/boekinfo2.dart';
 import 'package:herman_brusselmans/services/boekenLijst.dart';
 
