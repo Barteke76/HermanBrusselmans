@@ -25,9 +25,6 @@ class _BoekInfoState extends State<BoekInfo2> {
 
   @override
   Widget build(BuildContext context) {
-    PageController controller =
-        PageController(viewportFraction: 0.9, initialPage: index);
-
     List<Widget> banners = List<Widget>();
 
     for (int i = 0; i < widget.boekenLijst.getBoekenLijstLengte(); i++) {
@@ -138,6 +135,9 @@ class _BoekInfoState extends State<BoekInfo2> {
       banners.add(boekView);
     }
 
+    PageController controller = PageController(
+        viewportFraction: 0.9, initialPage: (index + banners.length));
+
     return SafeArea(
       child: Scaffold(
         body: Column(
@@ -160,12 +160,11 @@ class _BoekInfoState extends State<BoekInfo2> {
               width: MediaQuery.of(context).size.width,
               height: MediaQuery.of(context).size.height * 0.85,
               child: PageView.builder(
-                controller: controller,
-                scrollDirection: Axis.horizontal,
-                // children:banners,
-                itemBuilder: (BuildContext context, int teller) =>
-                    banners[teller],
-              ),
+                  controller: controller,
+                  scrollDirection: Axis.horizontal,
+                  itemBuilder: (BuildContext context, int teller) {
+                    return banners[teller % banners.length];
+                  }),
             ),
           ],
         ),

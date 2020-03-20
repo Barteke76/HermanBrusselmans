@@ -59,6 +59,7 @@ class _LoadingState extends State<Loading> {
         jaarLijst.add("");
         inhoudLijst.add("");
         print(urlLijst[i]);
+        print(e);
       }
     }
 
