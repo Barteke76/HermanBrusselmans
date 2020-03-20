@@ -1,35 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:herman_brusselmans/paginas/boekinfo.dart';
-import 'package:herman_brusselmans/services/globals.dart' as globals;
+import 'package:herman_brusselmans/paginas/boekinfo2.dart';
+import 'package:herman_brusselmans/services/boekenLijst.dart';
 
 class GewensteBoeken extends StatefulWidget {
-  final Map gewensteLijst;
+  final BoekenLijst boekenLijst;
 
-  GewensteBoeken(this.gewensteLijst);
+  GewensteBoeken(this.boekenLijst);
 
   @override
   _GewensteBoekenState createState() => _GewensteBoekenState();
 }
 
 class _GewensteBoekenState extends State<GewensteBoeken> {
-  void verwijderBoek(titel) {
-    setState(() {
-      globals.mijnLijst[titel] = widget.gewensteLijst[titel];
-      widget.gewensteLijst.remove(titel);
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
-    var titels = widget.gewensteLijst.keys.toList();
-    String hoofd = 'https://www.deslegte.be';
     return GridView.builder(
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3, crossAxisSpacing: 3.0, mainAxisSpacing: 3.0),
+          crossAxisCount: 2, crossAxisSpacing: 3.0, mainAxisSpacing: 3.0),
       scrollDirection: Axis.vertical,
-      itemCount: widget.gewensteLijst.length,
+      itemCount: widget.boekenLijst.getBoekenLijstLengte(),
       itemBuilder: (BuildContext context, int index) {
         return Card(
+          color: Colors.blueGrey[900],
           margin: EdgeInsets.all(8.0),
           elevation: 4.0,
           shape: RoundedRectangleBorder(
@@ -48,23 +42,37 @@ class _GewensteBoekenState extends State<GewensteBoeken> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => BoekInfo(widget.gewensteLijst, titels[index]),
+                            builder: (context) =>
+                                BoekInfo2(widget.boekenLijst, index),
                           ),
                         );
                       },
-                      child: Image.network(
-                        (hoofd + widget.gewensteLijst[titels[index]]),
-                      ),
+                      child: widget.boekenLijst.getFoto(index) == ""
+                          ? Image.asset(
+                              "assets/NoPicAvailable.png",
+                            )
+                          : Image.network(
+                              widget.boekenLijst.getFoto(index),
+                            ),
                     ),
                   ),
                 ),
                 Align(
                   alignment: Alignment.bottomRight,
                   child: InkWell(
-                      onTap: () {
-                        verwijderBoek(titels[index]);
-                      },
-                      child: CircleAvatar(radius: 10.0, child: Text('+'))),
+                    onTap: () {
+                      setState(() {
+                        widget.boekenLijst.changeBezit(index);
+                      });
+                    },
+                    child: CircleAvatar(
+                        backgroundColor:
+                            widget.boekenLijst.getBezit(index) == true
+                                ? Colors.green
+                                : Colors.grey[200],
+                        radius: 12.0,
+                        child: Icon(Icons.done, size: 10.0)),
+                  ),
                 ),
               ],
             ),

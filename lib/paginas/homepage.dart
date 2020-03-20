@@ -1,8 +1,7 @@
-
 import 'package:flutter/material.dart';
 import 'package:herman_brusselmans/paginas/gewensteBoeken.dart';
-import 'package:herman_brusselmans/paginas/mijnBoeken.dart';
-import 'package:herman_brusselmans/services/globals.dart' as globals;
+import 'package:herman_brusselmans/paginas/hermanInfo.dart';
+import 'package:herman_brusselmans/services/boekenLijst.dart';
 
 class MyHomePage extends StatefulWidget {
   @override
@@ -10,83 +9,94 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
- 
-  //Map<String, String> mijnLijst = {};
-
+  List<String> tonen = ["alles", "niet in mijn collectie", "mijn collectie"];
+  int selectie = 0;
   @override
   Widget build(BuildContext context) {
     Map data = ModalRoute.of(context).settings.arguments;
-    Map boek = data['boek'];
-    List<String> titels = [];
-    List<String> covers = [];
-    titels = boek.keys.toList();
-    covers = boek.values.toList();
-    Map<String, String> gewensteLijst = {};
-    //Map<String, String> mijnLijst = {};
-    List<String> titelsMijnLijst = [];
+    BoekenLijst boekenLijst = data['boekLijst'];
 
-    if (globals.mijnLijst != null) {
-      titelsMijnLijst = globals.mijnLijst.keys.toList();
-    }
-
-    for (var i = 0; i < titels.length; i++) {
-      for (var j = 0; j < titelsMijnLijst.length; j++) {
-        if (titels[i] == titelsMijnLijst[j]) {
-          titels.remove(titels[i]);
-          covers.remove(covers[i]);
-        }
-      }
-    }
-
-    gewensteLijst = Map.fromIterables(titels, covers);
-    return DefaultTabController(
-      length: 2,
+    return SafeArea(
       child: Scaffold(
         appBar: AppBar(
-          bottom: TabBar(tabs: [
-            Tab(
-              child: Text(
-                'Gewenste boeken',
-                textScaleFactor: 1.3,
-              ),
-            ),
-            Tab(
-              child: Text(
-                'Mijn boeken',
-                textScaleFactor: 1.3,
-              ),
-            ),
-          ]),
-          actions: <Widget>[
-            InkWell(onTap: () {}, child: Icon(Icons.search)),
-          ],
+          backgroundColor: Colors.blueGrey[800],
+          elevation: 0.0,
           title: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
               InkWell(
-                onTap: () {},
-                child: Text(
-                  'Herman Brusselmans',
+                onTap: () {
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (context) => HermanInfo()));
+                },
+                child: Row(
+                  children: <Widget>[
+                    Text(
+                      'Bibliografie',
+                      style: TextStyle(
+                        fontSize: 15.0,
+                      ),
+                    ),
+                    SizedBox(
+                      width: 8.0,
+                    ),
+                    InkWell(
+                      onTap: () {
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => HermanInfo()));
+                      },
+                      child: Icon(
+                        Icons.info_outline,
+                        size: 15.0,
+                      ),
+                    ),
+                    SizedBox(
+                      width: 60.0,
+                    ),
+                    Text(
+                      "Toon: ",
+                      style: TextStyle(
+                        fontSize: 15.0,
+                      ),
+                    ),
+                    InkWell(
+                      onTap: () {
+                        setState(
+                          () {
+                            selectie++;
+                            if (selectie > tonen.length - 1) {
+                              selectie = 0;
+                            }
+                          },
+                        );
+                      },
+                      child: Text(
+                        tonen[selectie],
+                        style: TextStyle(
+                          color: Colors.white60,
+                          fontSize: 15.0,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              SizedBox(
-                width: 8.0,
-              ),
-              InkWell(
-                onTap: () {},
-                child: Icon(
-                  Icons.info_outline,
-                ),
+
+              // TextField(
+              //   onChanged: (text) {
+              //     value = text;
+              //   },
+              // ),
+              Icon(
+                Icons.search,
+                size: 15.0,
               ),
             ],
           ),
         ),
-        body: TabBarView(
-          children: [
-            GewensteBoeken(gewensteLijst),
-            MijnBoeken(gewensteLijst),
-          ],
-        ),
+        body: GewensteBoeken(boekenLijst),
       ),
     );
   }

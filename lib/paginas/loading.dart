@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:herman_brusselmans/services/boek.dart';
+import 'package:herman_brusselmans/services/boekenLijst.dart';
 import 'dart:async';
 
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as parser;
-import 'package:html/dom.dart' as dom;
 
 class Loading extends StatefulWidget {
   @override
@@ -11,47 +12,69 @@ class Loading extends StatefulWidget {
 }
 
 class _LoadingState extends State<Loading> {
-  //de verschillende url's die worden gebruikt
-  var url1 =
-      'https://www.deslegte.be/boeken/herman-brusselmans/paperback/verzending-vanuit-belgie/antwerpen-wapper/?q=&p=1&sc=popularity&so=desc&lv=list';
-  var url2 =
-      'https://www.deslegte.be/boeken/herman-brusselmans/paperback/verzending-vanuit-belgie/antwerpen-wapper/?p=2&lv=list&sc=popularity&so=desc';
+  var tekst;
+  var jaar;
+  var inhoud;
+  List<String> fotoLijst = [];
+  List<String> jaarLijst = [];
+  List<String> inhoudLijst = [];
+  BoekenLijst boekenLijst = BoekenLijst();
 
   Future<void> gegevensLaden() async {
-    List<String> titelLijst = [];
-    List<String> imageLijst = [];
-    var boek = Map<String, String>();
-    var tijdelijk1 = Map<String, String>();
-    var tijdelijk2 = Map<String, String>();
-    List<String> titelPart1;
+    //site aflopen voor de boekenlijst en de url's
+    var response = await http.get(
+        "https://hermanbrusselmans.nl/boeken/bloed-spuwen-naar-de-hematoloog");
+    var document = parser.parse(response.body);
+    var content = document.getElementById("right_content");
+    var gegevens = content.getElementsByTagName("a");
+    var urlLijst = gegevens.map((cover) => cover.attributes['href']).toList();
+    var titelLijst =
+        gegevens.map((cover) => cover.attributes['title']).toList();
+    //alle boek inlezen van de verschillende url's
+    for (var i = 0; i < urlLijst.length; i++) {
+      try {
+        response = await http.get(urlLijst[i]);
+        document = parser.parse(response.body);
+        content = document.getElementById("leftcolumn");
+        var content2 = content.getElementsByClassName("text");
+        
+        //Zoeken naar boekcover
+        gegevens = content2[1].getElementsByTagName("a");
+        var foto = gegevens.map((cover) => cover.attributes['href']).toList();
+        fotoLijst.add(foto[0]);
 
-    //1ste pagina scrappen
-    http.Response response = await http.get(url1);
-    dom.Document document = parser.parse(response.body);
-    var content = document.getElementsByClassName('searchresults list');
-    var gegevens = (content[0].getElementsByTagName('img'));
-    imageLijst = gegevens.map((cover) => cover.attributes['src']).toList();
-    titelLijst = gegevens.map((cover) => cover.attributes['title']).toList();
-    for (var i = 0; i < (titelLijst.length); i++) {
-      titelPart1 = titelLijst[i].split(" -");
-      tijdelijk1[titelPart1[0]] = imageLijst[i];
+        //jaartal filteren van content2[1].outerHtml
+        jaar = (content2[1].outerHtml).split("Publicatie jaar:</b><br>");
+        jaar = jaar[1].split("<br>");
+        jaarLijst.add(jaar[0]);
+
+        // //inhoud filteren tekst[1]
+        inhoud = (content2[1].outerHtml).split("<b>Beschrijving:</b><br>");
+        inhoud = inhoud[1].split("<div");
+        inhoud = inhoud[0].replaceAll("<br>", "\n");
+        inhoudLijst.add(inhoud);
+
+      } catch (e) {
+        fotoLijst.add("");
+        jaarLijst.add("");
+        inhoudLijst.add("");
+        print(urlLijst[i]);
+      }
     }
-    //2de pagine scrappen
-    response = await http.get(url2);
-    document = parser.parse(response.body);
-    content = document.getElementsByClassName('searchresults list');
-    gegevens = (content[0].getElementsByTagName('img'));
-    imageLijst = gegevens.map((cover) => cover.attributes['src']).toList();
-    titelLijst = gegevens.map((cover) => cover.attributes['title']).toList();
-    for (var i = 0; i < (titelLijst.length); i++) {
-      titelPart1 = titelLijst[i].split(" -");
-      tijdelijk2[titelPart1[0]] = imageLijst[i];
+
+    for (var i = 0; i < urlLijst.length; i++) {
+      Boek newBoek = Boek();
+      newBoek.titel = titelLijst[i];
+      newBoek.url = urlLijst[i];
+      newBoek.bezit = false;
+      newBoek.foto = fotoLijst[i];
+      newBoek.jaar = jaarLijst[i];
+      newBoek.inhoud = inhoudLijst[i];
+      boekenLijst.boekToevoegen(newBoek);
     }
-    boek = {...tijdelijk1, ...tijdelijk2} ;
-    print(boek.length);
 
     Navigator.pushReplacementNamed(context, '/home', arguments: {
-      'boek': boek,
+      'boekLijst': boekenLijst,
     });
   }
 
@@ -63,19 +86,71 @@ class _LoadingState extends State<Loading> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.blue,
-        title: Text(
-          'Herman Brusselmans',
-        ),
-        centerTitle: true,
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+    return SafeArea(
+      child: Scaffold(
+        body: Stack(
           children: <Widget>[
-            CircularProgressIndicator(),
+            Container(
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage("assets/loading/loading2.jpg"),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+            Column(
+              children: <Widget>[
+                SizedBox(
+                  height: 20.0,
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Text(
+                      "Herman Brusselmans",
+                      style: TextStyle(
+                        fontSize: 35.0,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.6,
+                ),
+                CircularProgressIndicator(),
+                SizedBox(
+                  height: 30.0,
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Text(
+                      "Welkom, even geduld",
+                      style: TextStyle(
+                        fontSize: 15.0,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Text(
+                      "alleen bij eerste gebruik duurt dit even.",
+                      style: TextStyle(
+                        fontSize: 15.0,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                )
+              ],
+            ),
           ],
         ),
       ),
