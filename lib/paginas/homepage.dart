@@ -26,8 +26,12 @@ class _MyHomePageState extends State<MyHomePage> {
             children: <Widget>[
               InkWell(
                 onTap: () {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => HermanInfo()));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => HermanInfo(boekenLijst),
+                    ),
+                  );
                 },
                 child: Row(
                   children: <Widget>[
@@ -45,7 +49,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => HermanInfo()));
+                                builder: (context) => HermanInfo(boekenLijst)));
                       },
                       child: Icon(
                         Icons.info_outline,

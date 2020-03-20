@@ -37,7 +37,7 @@ class _LoadingState extends State<Loading> {
         document = parser.parse(response.body);
         content = document.getElementById("leftcolumn");
         var content2 = content.getElementsByClassName("text");
-        
+
         //Zoeken naar boekcover
         gegevens = content2[1].getElementsByTagName("a");
         var foto = gegevens.map((cover) => cover.attributes['href']).toList();
@@ -53,15 +53,27 @@ class _LoadingState extends State<Loading> {
         inhoud = inhoud[1].split("<div");
         inhoud = inhoud[0].replaceAll("<br>", "\n");
         inhoudLijst.add(inhoud);
-
       } catch (e) {
         fotoLijst.add("");
         jaarLijst.add("");
         inhoudLijst.add("");
         print(urlLijst[i]);
-        print(e);
       }
     }
+
+    //biografie van herman brusselmans toevoegen, alleen in eerste record
+    response = await http.get("https://hermanbrusselmans.nl/biografie");
+    document = parser.parse(response.body);
+    content = document.getElementById("leftcolumn");
+    var content2 = content.getElementsByClassName("text no_border_mobile");
+    var tekst = (content2[0].outerHtml).split("<br><i>");
+    tekst = tekst[1].split("Meer biografische verhalen");
+    var biografie = tekst[0].replaceAll("<br>", "\n");
+    biografie = biografie.replaceAll("</i>", "");
+    biografie = biografie.replaceAll("&nbsp;", "");
+    biografie = biografie.replaceAll("<i>", " ");
+    biografie = biografie.replaceAll("door <a href=", " ");
+    biografie = biografie.replaceAll("><u>hier naartoe te gaan</u></a>", "");
 
     for (var i = 0; i < urlLijst.length; i++) {
       Boek newBoek = Boek();
@@ -71,6 +83,7 @@ class _LoadingState extends State<Loading> {
       newBoek.foto = fotoLijst[i];
       newBoek.jaar = jaarLijst[i];
       newBoek.inhoud = inhoudLijst[i];
+      newBoek.biografie = biografie;
       boekenLijst.boekToevoegen(newBoek);
     }
 

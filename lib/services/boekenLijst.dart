@@ -35,6 +35,10 @@ class BoekenLijst {
     return inhoud;
   }
 
+  String getBio(){
+    return boekenLijst[0].biografie;
+  }
+
   String getTitel(int index) {
     String titel;
     titel = boekenLijst[index].titel;

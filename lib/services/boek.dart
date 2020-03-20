@@ -5,6 +5,7 @@ class Boek {
   bool bezit = false;
   String foto = "";
   String url = "";
+  String biografie = "";
 
   Boek(
       {this.titel,
