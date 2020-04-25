@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:herman_brusselmans/services/boek.dart';
 import 'package:herman_brusselmans/services/boekenLijst.dart';
+import 'package:herman_brusselmans/services/netwerk_processen.dart';
 import 'dart:async';
-
-import 'package:http/http.dart' as http;
-import 'package:html/parser.dart' as parser;
+import 'package:herman_brusselmans/services/database.dart';
 
 class Loading extends StatefulWidget {
   @override
@@ -12,90 +11,84 @@ class Loading extends StatefulWidget {
 }
 
 class _LoadingState extends State<Loading> {
-  var tekst;
-  var jaar;
-  var inhoud;
-  List<String> fotoLijst = [];
-  List<String> jaarLijst = [];
-  List<String> inhoudLijst = [];
+  final DatabaseHelper boekDB = DatabaseHelper.instance;
+  NetwerkProcessen netwerk = NetwerkProcessen();
   BoekenLijst boekenLijst = BoekenLijst();
+  String status = "";
+  String status2 = "";
 
-  Future<void> gegevensLaden() async {
-    //site aflopen voor de boekenlijst en de url's
-    var response = await http.get(
-        "https://hermanbrusselmans.nl/boeken/bloed-spuwen-naar-de-hematoloog");
-    var document = parser.parse(response.body);
-    var content = document.getElementById("right_content");
-    var gegevens = content.getElementsByTagName("a");
-    var urlLijst = gegevens.map((cover) => cover.attributes['href']).toList();
-    var titelLijst =
-        gegevens.map((cover) => cover.attributes['title']).toList();
-    //alle boek inlezen van de verschillende url's
-    for (var i = 0; i < urlLijst.length; i++) {
-      try {
-        response = await http.get(urlLijst[i]);
-        document = parser.parse(response.body);
-        content = document.getElementById("leftcolumn");
-        var content2 = content.getElementsByClassName("text");
-
-        //Zoeken naar boekcover
-        gegevens = content2[1].getElementsByTagName("a");
-        var foto = gegevens.map((cover) => cover.attributes['href']).toList();
-        fotoLijst.add(foto[0]);
-
-        //jaartal filteren van content2[1].outerHtml
-        jaar = (content2[1].outerHtml).split("Publicatie jaar:</b><br>");
-        jaar = jaar[1].split("<br>");
-        jaarLijst.add(jaar[0]);
-
-        // //inhoud filteren tekst[1]
-        inhoud = (content2[1].outerHtml).split("<b>Beschrijving:</b><br>");
-        inhoud = inhoud[1].split("<div");
-        inhoud = inhoud[0].replaceAll("<br>", "\n");
-        inhoudLijst.add(inhoud);
-      } catch (e) {
-        fotoLijst.add("");
-        jaarLijst.add("");
-        inhoudLijst.add("");
-        print(urlLijst[i]);
-      }
-    }
-
-    //biografie van herman brusselmans toevoegen, alleen in eerste record
-    response = await http.get("https://hermanbrusselmans.nl/biografie");
-    document = parser.parse(response.body);
-    content = document.getElementById("leftcolumn");
-    var content2 = content.getElementsByClassName("text no_border_mobile");
-    var tekst = (content2[0].outerHtml).split("<br><i>");
-    tekst = tekst[1].split("Meer biografische verhalen");
-    var biografie = tekst[0].replaceAll("<br>", "\n");
-    biografie = biografie.replaceAll("</i>", "");
-    biografie = biografie.replaceAll("&nbsp;", "");
-    biografie = biografie.replaceAll("<i>", " ");
-    biografie = biografie.replaceAll("door <a href=", " ");
-    biografie = biografie.replaceAll("><u>hier naartoe te gaan</u></a>", "");
-
+  Future<void> boekenLaden() async {
+    //opzoeken van de url's voor alle boeken.
+    List<String> urlLijst = await netwerk.inlezenBoekenLijst();
+    //biografie van herman Brusselmans scrappen
+    await netwerk.bioHerman();
+    //alle boek inhouden inlezen van de verschillende url's
+    await netwerk.alleBoekenInhoud();
+    //boekenlijst aanmaken
     for (var i = 0; i < urlLijst.length; i++) {
       Boek newBoek = Boek();
-      newBoek.titel = titelLijst[i];
+      newBoek.titel = netwerk.titelLijst[i];
       newBoek.url = urlLijst[i];
       newBoek.bezit = false;
-      newBoek.foto = fotoLijst[i];
-      newBoek.jaar = jaarLijst[i];
-      newBoek.inhoud = inhoudLijst[i];
-      newBoek.biografie = biografie;
+      newBoek.eBoek = false;
+      newBoek.boek = false;
+      newBoek.foto = netwerk.fotoLijst[i];
+      newBoek.jaar = netwerk.jaarLijst[i];
+      newBoek.inhoud = netwerk.inhoudLijst[i];
+      newBoek.biografie = netwerk.biografie;
       boekenLijst.boekToevoegen(newBoek);
     }
+    //ontbrekende boeken invullen waardat scrappen een foutmelding geeft
+    boekenLijst.ontbrekendeBoeken();
+    //controleren of er nor ontbrekende boeken zijn en indien nog eens proberen
+    //scrappen
+    for (var i = 0; i < boekenLijst.getBoekenLijstLengte(); i++) {
+      if (boekenLijst.getInhoud(i) == "") {
+        await netwerk.boekInhoud(i, true);
+        Boek newBoek = Boek();
+        newBoek.titel = netwerk.titelLijst[i];
+        newBoek.url = urlLijst[i];
+        newBoek.bezit = false;
+        newBoek.eBoek = false;
+        newBoek.boek = false;
+        newBoek.foto = netwerk.fotoLijst[i];
+        newBoek.jaar = netwerk.jaarLijst[i];
+        newBoek.inhoud = netwerk.inhoudLijst[i];
+        newBoek.biografie = netwerk.biografie;
+        boekenLijst.boekVervangen(newBoek, i);
+      }
+    }
+  }
 
+  Future<void> controleDatabase() async {
+    List<Boek> dbLijst = await boekDB.queryAllBoeks();
+    if (dbLijst.length < 15) {
+      setState(() {
+        status = "eerste gebruik, initialiseren database";
+        status2 = "even geduld, aub";
+      });
+      await boekenLaden();
+      //database vullen met alle boeken van herman brusselmans
+      for (var i = 0; i < boekenLijst.getBoekenLijstLengte(); i++) {
+        Boek newBoek = boekenLijst.ontvangBoek(i);
+        await boekDB.insertBoek(newBoek);
+      }
+    } else {
+      setState(() {
+        status = "database wordt ingeladen";
+      });
+      boekenLijst.lijstToevoegen(dbLijst);
+      await Future.delayed(Duration(seconds: 3));
+    }
     Navigator.pushReplacementNamed(context, '/home', arguments: {
-      'boekLijst': boekenLijst,
+//      'boekLijst': boekenLijst,
     });
   }
 
   @override
   void initState() {
     super.initState();
-    gegevensLaden();
+    controleDatabase();
   }
 
   @override
@@ -141,7 +134,20 @@ class _LoadingState extends State<Loading> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
                     Text(
-                      "Welkom, even geduld",
+                      "Welkom",
+                      style: TextStyle(
+                        fontSize: 18.0,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Text(
+                      status,
                       style: TextStyle(
                         fontSize: 15.0,
                         color: Colors.white,
@@ -154,7 +160,7 @@ class _LoadingState extends State<Loading> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
                     Text(
-                      "alleen bij eerste gebruik duurt dit even.",
+                      status2,
                       style: TextStyle(
                         fontSize: 15.0,
                         color: Colors.white,
@@ -162,7 +168,7 @@ class _LoadingState extends State<Loading> {
                       ),
                     ),
                   ],
-                )
+                ),
               ],
             ),
           ],

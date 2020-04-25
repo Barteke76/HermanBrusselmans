@@ -12,8 +12,6 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         // primaryColorDark: Colors.blueGrey[800],
         scaffoldBackgroundColor: Colors.blueGrey[800],
-        
-        // primarySwatch: Colors.blue,
       ),
       //home: Loading(),
       routes: {

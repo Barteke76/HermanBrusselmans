@@ -1,5 +1,7 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:herman_brusselmans/services/boekenLijst.dart';
+import 'package:herman_brusselmans/services/database.dart';
 
 class BoekInfo2 extends StatefulWidget {
   final int index;
@@ -13,6 +15,7 @@ class BoekInfo2 extends StatefulWidget {
 }
 
 class _BoekInfoState extends State<BoekInfo2> {
+  final DatabaseHelper boekDB = DatabaseHelper.instance;
   String title;
   int teller;
   int index;
@@ -54,7 +57,22 @@ class _BoekInfoState extends State<BoekInfo2> {
                 SizedBox(
                   height: MediaQuery.of(context).size.height * 0.4,
                   child: widget.boekenLijst.getFoto(i) != ""
-                      ? Image.network(widget.boekenLijst.getFoto(i))
+                      ? Image.network(
+                          widget.boekenLijst.getFoto(i),
+                          loadingBuilder: (BuildContext context, Widget child,
+                              ImageChunkEvent loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Center(
+                              child: CircularProgressIndicator(
+                                value: loadingProgress.expectedTotalBytes !=
+                                        null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes
+                                    : null,
+                              ),
+                            );
+                          },
+                        )
                       : Stack(
                           children: <Widget>[
                             Align(
@@ -93,38 +111,79 @@ class _BoekInfoState extends State<BoekInfo2> {
                   ),
                 ),
                 SizedBox(
-                  height: 30.0,
+                  height: 25.0,
                 ),
                 Align(
-                  alignment: Alignment.bottomRight,
-                  child: InkWell(
-                    onTap: () {
-                      setState(() {
-                        widget.boekenLijst.changeBezit(i);
-                      });
-                    },
-                    child: Row(
-                      // mainAxisSize: MainAxisSize.max,
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: <Widget>[
-                        Text(
-                          "In mijn collectie",
-                          style: TextStyle(
-                            color: Colors.white,
+                  alignment: Alignment.bottomCenter,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: <Widget>[
+                      Column(
+                        children: <Widget>[
+                          Row(
+                            children: <Widget>[
+                              InkWell(
+                                onTap: () async {
+                                  await boekDB.updateEboek(i + 1);
+                                  setState(() {
+                                    widget.boekenLijst.changeEBoek(i);
+                                  });
+                                },
+                                child: CircleAvatar(
+                                  backgroundColor:
+                                      widget.boekenLijst.getEBoek(i) == true
+                                          ? Colors.purple
+                                          : Colors.grey[200],
+                                  radius: 15.0,
+                                  child: Icon(Icons.explicit, size: 18.0),
+                                ),
+                              ),
+                              SizedBox(
+                                width: 5.0,
+                              ),
+                              Text(
+                                "Op E-reader",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                        SizedBox(
-                          width: 8.0,
-                        ),
-                        CircleAvatar(
-                            backgroundColor:
-                                widget.boekenLijst.getBezit(i) == true
-                                    ? Colors.green
-                                    : Colors.grey[200],
-                            radius: 15.0,
-                            child: Icon(Icons.done, size: 10.0)),
-                      ],
-                    ),
+                        ],
+                      ),
+                      Column(
+                        children: <Widget>[
+                          Row(
+                            children: <Widget>[
+                              Text(
+                                "In boekvorm",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                ),
+                              ),
+                              SizedBox(
+                                width: 5.0,
+                              ),
+                              InkWell(
+                                onTap: () async {
+                                  await boekDB.updateBoek(i + 1);
+                                  setState(() {
+                                    widget.boekenLijst.changeBoek(i);
+                                  });
+                                },
+                                child: CircleAvatar(
+                                    backgroundColor:
+                                        widget.boekenLijst.getBoek(i) == true
+                                            ? Colors.green
+                                            : Colors.grey[200],
+                                    radius: 15.0,
+                                    child: Icon(Icons.book, size: 18.0)),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ],
