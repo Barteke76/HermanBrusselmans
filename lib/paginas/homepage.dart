@@ -58,31 +58,34 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.blueGrey[800],
-          elevation: 0.0,
-          title: search == false ? titleRow(context) : titleSearch(context),
-          actions: <Widget>[
-            IconButton(
-              icon: _searchIcon,
-              onPressed: () {
-                setState(() {
-                  if (_searchIcon.icon == Icons.search) {
-                    _searchIcon = Icon(Icons.close);
-                    search = true;
-                  } else {
-                    _searchIcon = Icon(Icons.search);
-                    _filter.clear();
-                    search = false;
-                  }
-                });
-              },
-            ),
-          ],
+    return Container(
+      color: Colors.blueGrey[800],
+      child: SafeArea(
+        child: Scaffold(
+          appBar: AppBar(
+            backgroundColor: Colors.blueGrey[800],
+            elevation: 0.0,
+            title: search == false ? titleRow(context) : titleSearch(context),
+            actions: <Widget>[
+              IconButton(
+                icon: _searchIcon,
+                onPressed: () {
+                  setState(() {
+                    if (_searchIcon.icon == Icons.search) {
+                      _searchIcon = Icon(Icons.close);
+                      search = true;
+                    } else {
+                      _searchIcon = Icon(Icons.search);
+                      _filter.clear();
+                      search = false;
+                    }
+                  });
+                },
+              ),
+            ],
+          ),
+          body: GewensteBoeken(selectie, searchText, search),
         ),
-        body: GewensteBoeken(selectie, searchText, search),
       ),
     );
   }

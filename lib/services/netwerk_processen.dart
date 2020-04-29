@@ -64,7 +64,7 @@ class NetwerkProcessen {
         fotoLijst[i] == "";
         jaarLijst[i] == "";
         inhoudLijst[i] == "";
-        print(_urlLijst[i]);
+        // print(_urlLijst[i]);
       }
     }
   }

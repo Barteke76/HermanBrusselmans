@@ -1,5 +1,3 @@
-import 'package:herman_brusselmans/paginas/gewensteBoeken.dart';
-
 final String columnId = '_id';
 final String columnTitel = 'titel';
 final String columnInhoud = 'inhoud';
